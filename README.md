@@ -19,7 +19,12 @@ tools/
   gen_tb.py          Genera un testbench con checkpoints por etapa a partir del modelo ISA
   fuzz/              Prueba diferencial aleatoria (A, B y C contra el modelo ISA)
 vivado/
+  correr_xsim.sh     Corre las 8 simulaciones con xvlog/xelab/xsim (sin proyecto) y deja resumen.txt
+  ondas.sh N         Abre la waveform N (1–4) ya configurada en la GUI de xsim
+  ondas/             Señales de cada waveform
   crear_proyecto.tcl Crea un proyecto Vivado para una de las versiones
+  correr_todo.tcl    Igual que correr_xsim.sh, pero en modo proyecto desde la consola Tcl
+GUIA_VIVADO.html     Guía paso a paso: simulación, capturas y textos para el informe
 ```
 
 Las tres versiones usan las mismas memorias: `imem` de 256 palabras (`a[9:2]`) y `dmem` de 512 palabras (`a[10:2]`). La base de datos del programa del profesor (x1 = 1536) cae en `dmem.RAM[384]`.

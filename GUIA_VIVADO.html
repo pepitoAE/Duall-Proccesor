@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Guía Vivado — Proyecto 2 RISC-V Dual-Issue</title>
+<style>
+  :root { --fg:#1d1d1f; --mut:#5f6368; --bg:#fafafa; --card:#fff; --acc:#0b57d0; --ok:#137333; --warn:#b06000; --line:#e3e3e3; --code:#f1f3f4; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#e8eaed; --mut:#9aa0a6; --bg:#151515; --card:#1f1f1f; --acc:#8ab4f8; --ok:#81c995; --warn:#fdd663; --line:#333; --code:#2a2a2a; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:32px 20px 80px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  h2 { font-size:20px; margin:40px 0 12px; padding-top:12px; border-top:1px solid var(--line); }
+  h3 { font-size:16px; margin:24px 0 8px; }
+  p.sub { color:var(--mut); margin:0 0 24px; }
+  code, pre { font-family:ui-monospace,"JetBrains Mono",Consolas,monospace; font-size:13px; }
+  code { background:var(--code); padding:1px 5px; border-radius:4px; }
+  pre { background:var(--code); padding:12px 14px; border-radius:8px; overflow-x:auto; margin:8px 0 16px; }
+  table { border-collapse:collapse; width:100%; margin:8px 0 16px; font-size:14px; }
+  th, td { border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top; }
+  th { background:var(--code); }
+  td.n { text-align:right; font-variant-numeric:tabular-nums; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin:14px 0; }
+  .tag { display:inline-block; font-size:12px; font-weight:600; padding:1px 8px; border-radius:10px; background:var(--code); color:var(--acc); margin-right:6px; }
+  .nota { border-left:3px solid var(--warn); padding:4px 12px; margin:12px 0; color:var(--fg); }
+  .anot { border-left:3px solid var(--ok); padding:6px 12px; margin:10px 0; background:var(--code); border-radius:0 6px 6px 0; }
+  ol li, ul li { margin:4px 0; }
+  .check { list-style:none; padding-left:0; }
+  .check li::before { content:"☐ "; color:var(--acc); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Guía paso a paso en Vivado (Arch Linux)</h1>
+<p class="sub">Proyecto 2 — Procesador RISC-V Dual-Issue · Simulación de las 3 versiones y capturas de waveforms para el informe</p>
+
+<div class="card">
+<b>Resumen.</b> Todo se hace desde la terminal con los simuladores de Vivado (<code>xvlog</code>, <code>xelab</code>, <code>xsim</code>). No hace falta crear proyectos ni elegir un FPGA.
+<ol>
+  <li>Actualizar el repo (2 min).</li>
+  <li>Correr las 8 simulaciones con un solo script y comparar contra la tabla (5 min).</li>
+  <li>Abrir 4 waveforms ya configuradas y tomar 7 capturas (20–30 min).</li>
+  <li>Subir las capturas al repo.</li>
+</ol>
+</div>
+
+<h2>Paso 0 · Actualizar el repositorio</h2>
+<p>Pon el último <code>riscv-dual-issue.zip</code> en la carpeta que contiene tu repo y ejecuta:</p>
+<pre>unzip -o riscv-dual-issue.zip
+cd riscv-dual-issue
+git add -A
+git commit -m "Programa propio, scripts xsim y guia de waveforms"
+git push</pre>
+
+<h2>Paso 1 · Cargar el entorno de Vivado</h2>
+<p>En cada terminal nueva hay que cargar las variables de Vivado. La ruta depende de dónde lo instalaste; las más comunes son estas:</p>
+<pre>source /tools/Xilinx/Vivado/2024.2/settings64.sh
+# o bien
+source /opt/Xilinx/Vivado/2024.2/settings64.sh</pre>
+<p>Si no sabes la ruta:</p>
+<pre>find / -name settings64.sh -path "*Vivado*" 2>/dev/null</pre>
+<p>Comprueba que quedó cargado:</p>
+<pre>which xvlog xelab xsim</pre>
+<div class="nota"><b>Hyprland:</b> la GUI de xsim es Java. En gestores de ventanas en mosaico suele abrir una ventana gris o vacía. Antes de abrir cualquier waveform, ejecuta:
+<pre>export _JAVA_AWT_WM_NONREPARENTING=1</pre>
+Si aun así se ve mal, prueba además con <code>export GDK_BACKEND=x11</code>.</div>
+
+<h2>Paso 2 · Correr todas las simulaciones</h2>
+<p>Desde la raíz del repo:</p>
+<pre>./vivado/correr_xsim.sh</pre>
+<p>Compila y simula 8 combinaciones: <code>tb_prog_profesor</code> y <code>tb_prog_propio</code> en A, B y C, más <code>tb_prog6_prediccion</code> en B y C. Al final deja todo en <code>vivado/xsim_runs/resumen.txt</code>.</p>
+
+<h3>Qué tiene que salir</h3>
+<p>Las líneas <code>METRICS</code> tienen el formato: <code>ciclos retiradas stalls_loaduse flushes ciclos_doble_retiro errores</code>.</p>
+<table>
+<tr><th>Versión</th><th>Testbench</th><th>Línea esperada</th></tr>
+<tr><td>A_single_issue</td><td>tb_prog_profesor</td><td><code>METRICS 458 312 9 68 0 0</code></td></tr>
+<tr><td>A_single_issue</td><td>tb_prog_propio</td><td><code>METRICS 583 490 0 46 0 0</code></td></tr>
+<tr><td>B_dual_issue</td><td>tb_prog_profesor</td><td><code>METRICS 387 312 11 68 74 0</code></td></tr>
+<tr><td>B_dual_issue</td><td>tb_prog_propio</td><td><code>METRICS 437 490 48 46 195 0</code></td></tr>
+<tr><td>C_dual_optimizado</td><td>tb_prog_profesor</td><td><code>METRICS 292 312 12 33 99 0</code></td></tr>
+<tr><td>C_dual_optimizado</td><td>tb_prog_propio</td><td><code>METRICS 373 490 41 25 209 0</code></td></tr>
+<tr><td>B_dual_issue</td><td>tb_prog6_prediccion</td><td><code>OK: mem[0] = 45, mem[4] = 10 en el ciclo 85</code></td></tr>
+<tr><td>C_dual_optimizado</td><td>tb_prog6_prediccion</td><td><code>OK: mem[0] = 45, mem[4] = 10 en el ciclo 82</code></td></tr>
+</table>
+<p>Además, todas las líneas <code>Etapa …</code> tienen que terminar en <code>OK</code>.</p>
+<div class="nota"><b>Si algo falla:</b> el script indica la carpeta del error, por ejemplo <code>vivado/xsim_runs/B_dual_issue/tb_prog_profesor/xvlog.out</code>. Copia ese archivo completo y pégamelo en el chat.</div>
+<p><b>Mándame el contenido de <code>resumen.txt</code></b> aunque todo salga bien: es la evidencia de que xsim da lo mismo que mi simulación.</p>
+
+<h2>Paso 3 · Capturas de waveforms</h2>
+<p>Cada waveform se abre con un comando. El script compila, abre la GUI, agrega las señales y corre la simulación completa. Tú solo haces zoom en la ventana de tiempo indicada y tomas la captura.</p>
+
+<h3>Cómo moverte en la GUI de xsim</h3>
+<ul>
+  <li><b>Zoom a un rango:</b> arrastra el mouse sobre la regla de tiempo, o usa los botones de lupa (+ / −) de la barra de la waveform.</li>
+  <li><b>Zoom Fit:</b> el botón con flechas hacia afuera muestra toda la simulación.</li>
+  <li><b>Ir a un tiempo exacto:</b> clic en la waveform y escribe el tiempo en el cuadro del cursor, o arrastra el cursor amarillo.</li>
+  <li><b>Marcadores:</b> clic derecho sobre la regla → <i>Add Marker</i>, para marcar los ciclos clave.</li>
+  <li><b>Cambiar radix:</b> selecciona la señal → clic derecho → <i>Radix</i> → Unsigned Decimal o Hexadecimal. Los scripts ya ponen el radix correcto.</li>
+</ul>
+
+<h3>Cómo tomar la captura en Hyprland</h3>
+<pre>sudo pacman -S grim slurp          # una sola vez
+mkdir -p informe/capturas
+grim -g "$(slurp)" informe/capturas/w1a_etapa_A.png</pre>
+<p><code>slurp</code> te deja seleccionar con el mouse el rectángulo de la ventana.</p>
+
+<div class="card">
+<span class="tag">Captura 1</span><b>Cierre de etapas A, B, C y D</b> — versión C, programa del profesor (requisito 1 del profesor)
+<pre>./vivado/ondas.sh 1</pre>
+<p><b>Señales:</b> <code>ciclos</code>, <code>retiradas</code>, <code>chk_A…chk_D</code>, <code>ok_A…ok_D</code>, <code>x1…x31</code> y <code>M0…M52</code> (memoria desde x1 = 1536).</p>
+<p>Son <b>4 capturas</b>, una por etapa. En cada una, haz zoom de unos 40 ns alrededor del pulso de <code>chk</code> y pon el cursor justo después del pulso.</p>
+<table>
+<tr><th>Archivo</th><th>Pulso</th><th>Tiempo</th><th>Valores que deben verse</th></tr>
+<tr><td>w1a_etapa_A.png</td><td><code>chk_A</code></td><td class="n">135 ns</td><td>x5=11, x6=5, x7=16, x9=7, x10=12; M0=11, M4=5, M8=12; <code>ok_A</code>=1</td></tr>
+<tr><td>w1b_etapa_B.png</td><td><code>chk_B</code></td><td class="n">275 ns</td><td>x11=11, x12=16, x15=7, x18=23; M12=7, M16=16, M20=23; <code>ok_B</code>=1</td></tr>
+<tr><td>w1c_etapa_C.png</td><td><code>chk_C</code></td><td class="n">2225 ns</td><td>x19=12, x21=24, x22=18, x24=24; M24=24, M28=18, M32=24; <code>ok_C</code>=1</td></tr>
+<tr><td>w1d_etapa_D.png</td><td><code>chk_D</code></td><td class="n">2945 ns</td><td>x27=1560, x28=74, x29=4, x31=1; M36=74, M40=4, M44=0, M48=1, M52=1; <code>ok_D</code>=1</td></tr>
+</table>
+<div class="anot"><b>Texto para el informe:</b> «El testbench mantiene un modelo de commit: actualiza un banco de registros sombra con cada instrucción que se retira en WB, en orden de programa. Cuando se retira el último <code>sw</code> de cada etapa, compara los 31 registros y la memoria con el estado de referencia del enunciado y genera el pulso <code>chk_X</code>. <code>ok_X</code> = 1 indica que coinciden. En la versión optimizada las etapas cierran en los ciclos 11, 25, 220 y 292, contra 11, 25, 312 y 387 en el Dual-Issue sin optimizar. La diferencia se concentra en la etapa C, que está formada por lazos.»</div>
+<p class="sub">Si te piden lo mismo en la versión B, los tiempos son 135, 275, 3145 y 3895 ns. Para abrirla, cambia <code>ver=C_dual_optimizado</code> por <code>ver=B_dual_issue</code> en la opción 1 de <code>vivado/ondas.sh</code>.</p>
+</div>
+
+<div class="card">
+<span class="tag">Captura 2</span><b>Doble emisión con WAW sobre x9 y forwarding con prioridad de la vía 2</b> — versión B (caso clave n.º 1)
+<pre>./vivado/ondas.sh 2</pre>
+<p><b>Zoom:</b> de <b>70 ns a 130 ns</b>. Archivo: <code>w2_waw_x9.png</code>.</p>
+<p><b>Instrucciones:</b> PC 32 <code>add x9,x7,x8</code> · PC 36 <code>addi x9,x0,7</code> · PC 40 <code>add x10,x9,x6</code></p>
+<table>
+<tr><th>Tiempo</th><th>Qué se ve</th></tr>
+<tr><td class="n">75 ns</td><td>D tiene <code>PCD</code>=32 y <code>PCD2</code>=36. <code>RAWpar</code>=0 porque <code>addi x9,x0,7</code> no lee x9, y <code>EmiteVia2</code>=1: <b>las dos salen juntas</b> aunque escriben el mismo registro.</td></tr>
+<tr><td class="n">85 ns</td><td>El par entra a E: ALU1 calcula 16+2=18 y ALU2 calcula 7. En D están <code>add x10,x9,x6</code> y <code>sw x5</code>, que también salen juntas.</td></tr>
+<tr><td class="n">95 ns</td><td><code>add x10</code> está en E y necesita x9. En M hay dos productores de x9: vía 1 = 18 y vía 2 = 7. <b><code>ForwardAE</code> = 100</b> (ALUResultM2), porque la vía 2 es la más joven. <code>SrcAE</code>=7, y x10 = 7+5 = 12.</td></tr>
+<tr><td class="n">105 ns</td><td>WB: <code>RdW</code>=9, <code>ResultW</code>=18 y <code>RdW2</code>=9, <code>ResultW2</code>=7. Dos escrituras en el mismo flanco: el regfile escribe primero la vía 1 y luego la vía 2, así que <b>x9 queda en 7</b>.</td></tr>
+<tr><td class="n">125 ns</td><td>x10 = 12, el valor correcto. Si la prioridad estuviera mal, sería 18+5 = 23.</td></tr>
+</table>
+<div class="anot"><b>Texto para el informe:</b> «La Issue Unit solo bloquea la emisión doble ante dependencias RAW dentro del par; un WAW no la impide. Para mantener la semántica secuencial se resuelve en dos puntos: (1) el forwarding sigue la prioridad M2 > M1 > W2 > W1, de modo que el consumidor recibe el valor de la instrucción más joven (código 100 en <code>ForwardAE</code>), y (2) el Register File escribe la vía 2 después de la vía 1 en el mismo flanco de bajada. El resultado, x9 = 7 y x10 = 12, coincide con el estado de la etapa A.»</div>
+</div>
+
+<div class="card">
+<span class="tag">Captura 3</span><b>Load-use en el lazo D1: emisión parcial + stall</b> — versión B (caso clave n.º 2)
+<pre>./vivado/ondas.sh 3</pre>
+<p><b>Zoom:</b> de <b>3150 ns a 3195 ns</b>, la primera iteración de D1. Archivo: <code>w3_loaduse_D1.png</code>.</p>
+<p><b>Instrucciones:</b> PC 252 <code>lw x30,0(x27)</code> · PC 256 <code>add x28,x28,x30</code> · PC 260 <code>slt x25,x30,x5</code></p>
+<table>
+<tr><th>Tiempo</th><th>Qué se ve</th></tr>
+<tr><td class="n">3155 ns</td><td>D tiene 252 / 256. <code>RAWpar</code>=1 porque el <code>add</code> lee x30, que escribe el <code>lw</code>: <code>EmiteVia2</code>=0 y <b>sale solo el <code>lw</code></b>. El <code>add</code> se reagrupa: pasa a la vía 1 y entra 260 (<code>slt</code>) como vía 2.</td></tr>
+<tr><td class="n">3165 ns</td><td>El <code>lw</code> está en E (<code>ResultSrcE0</code>=1, <code>RdE</code>=30) y en D están <code>add</code> y <code>slt</code>, que usan x30: <b><code>lwStall</code>=1</b>. <code>StallF</code>=<code>StallD</code>=1 congelan F y D, y <code>FlushE</code>=1 mete una burbuja en las dos vías de E.</td></tr>
+<tr><td class="n">3175 ns</td><td>E tiene burbujas (<code>InstrE</code>=0). El <code>lw</code> está en M leyendo la memoria.</td></tr>
+<tr><td class="n">3185 ns</td><td><code>add</code> y <code>slt</code> salen juntas. El <code>lw</code> está en WB con x30 = 11: <code>ForwardBE</code>=001 (para el <code>add</code>) y <code>ForwardAE2</code>=001 (para el <code>slt</code>) toman <code>ResultW</code>. <b>Un mismo productor alimenta a las dos vías.</b></td></tr>
+</table>
+<div class="anot"><b>Texto para el informe:</b> «El dato de un <code>lw</code> solo está disponible al final de MEM, así que no se puede adelantar a una instrucción que está en EX en el ciclo siguiente. En el Dual-Issue esto cuesta doble: primero la Issue Unit separa el par por RAW (emisión parcial y reagrupamiento sin perder la instrucción) y luego la Hazard Unit inserta una burbuja con <code>lwStall</code>. Cada iteración de D1 pierde unos 3 slots de emisión. Esto explica por qué el programa propio tiene 0 stalls load-use en el single-issue y 48 en el Dual-Issue: la distancia de 2 instrucciones que basta en el pipeline escalar no basta con emisión doble.»</div>
+</div>
+
+<div class="card">
+<span class="tag">Captura 4</span><b>La optimización: la BTB acierta el salto del lazo y falla el alternante</b> — versión C, <code>prog6_prediccion</code>
+<pre>./vivado/ondas.sh 4</pre>
+<p><b>Zoom:</b> de <b>60 ns a 260 ns</b>. Archivo: <code>w4_btb.png</code>. Si quieres un detalle adicional, toma una segunda captura de 160 a 240 ns (<code>w4b_btb_detalle.png</code>).</p>
+<p><b>Programa:</b> PC 32 <code>beq x4,x5,S</code> alterna T/NT en cada iteración · PC 48 <code>beq x7,x5,L</code> es el salto del lazo (9 T y luego 1 NT).</p>
+<table>
+<tr><th>Tiempo</th><th>Salto en E</th><th>PredBrE</th><th>PCSrcE</th><th>MispE</th><th>Interpretación</th></tr>
+<tr><td class="n">85 ns</td><td>PC 32</td><td>0</td><td>1</td><td>1</td><td>Fallo en frío: la BTB está vacía. Se crea la entrada con contador 10.</td></tr>
+<tr><td class="n">135 ns</td><td>PC 48</td><td>0</td><td>1</td><td>1</td><td>Fallo en frío del salto del lazo; se crea su entrada.</td></tr>
+<tr><td class="n">175 ns</td><td>PC 32</td><td>1</td><td>0</td><td>1</td><td>Predijo tomado pero no salta: <code>PCCorrE</code> = PC+4 = 36 y flush.</td></tr>
+<tr><td class="n">225 ns</td><td>PC 48</td><td>1</td><td>1</td><td><b>0</b></td><td><b>Acierto:</b> en Fetch ya se veía <code>PredF1</code>/<code>PredF2</code>=1 y el PC fue directo a 24. No hay flush (<code>FlushD</code>=<code>FlushE</code>=0).</td></tr>
+<tr><td class="n">245 ns</td><td>PC 32</td><td>0</td><td>1</td><td>1</td><td>El contador bajó a 01 y el salto vuelve a ser tomado: falla de nuevo.</td></tr>
+</table>
+<p>Al final de la simulación: <code>saltos</code>=21 y <code>fallos</code>=13. El salto del lazo falla 2 de 10 veces y el alternante 10 de 10.</p>
+<div class="anot"><b>Texto para el informe:</b> «En Fetch, la BTB se consulta con PC y PC+4. Si un slot predice tomado, el siguiente PC es su target; si es el slot 1, el slot 2 se anula (<code>SquashF2</code>). La predicción viaja hasta EX en <code>PredD</code>/<code>PredE</code>, donde se compara con el resultado real: solo hay flush cuando <code>MispE</code>=1. El salto del lazo se predice correctamente después de la primera iteración y ahorra 2 ciclos por iteración. El salto alternante (T, NT, T, …) hace oscilar el contador entre 01 y 10 y la predicción es siempre la opuesta: es la limitación del predictor de 2 bits, que no tiene historia de patrones.»</div>
+</div>
+
+<h2>Paso 4 · Subir las capturas</h2>
+<pre>git add informe/capturas
+git commit -m "Capturas de waveforms"
+git push</pre>
+<p>Mándamelas también por el chat: con ellas armo el informe final con las anotaciones.</p>
+
+<h2>Checklist</h2>
+<ul class="check">
+  <li>Entorno cargado: <code>which xvlog</code> responde.</li>
+  <li><code>./vivado/correr_xsim.sh</code> corre sin errores y el resumen coincide con la tabla del paso 2.</li>
+  <li><code>resumen.txt</code> enviado por el chat.</li>
+  <li>w1a, w1b, w1c y w1d (cierre de etapas) tomadas.</li>
+  <li>w2 (WAW x9) tomada.</li>
+  <li>w3 (load-use D1) tomada.</li>
+  <li>w4 (BTB) tomada.</li>
+  <li>Capturas subidas al repo y enviadas por el chat.</li>
+</ul>
+
+<h2>Problemas comunes</h2>
+<table>
+<tr><th>Síntoma</th><th>Solución</th></tr>
+<tr><td><code>xvlog: command not found</code></td><td>Falta el <code>source …/settings64.sh</code> en esa terminal (paso 1).</td></tr>
+<tr><td>La ventana de xsim sale gris o vacía</td><td><code>export _JAVA_AWT_WM_NONREPARENTING=1</code> antes de <code>ondas.sh</code>.</td></tr>
+<tr><td>Error de librerías (<code>libtinfo.so.5</code>, <code>libncurses</code>)</td><td><code>sudo pacman -S ncurses</code> y, si sigue, instala <code>ncurses5-compat-libs</code> desde AUR.</td></tr>
+<tr><td>Las memorias salen en 0 o aparece <code>TIMEOUT</code></td><td>No se copió el <code>.mem</code>: corre los scripts desde la raíz del repo, sin mover las carpetas <code>mem/</code>.</td></tr>
+<tr><td>Los números no coinciden con la tabla</td><td>Pégame <code>vivado/xsim_runs/resumen.txt</code> y el <code>sim.out</code> del caso que difiere.</td></tr>
+</table>
+
+</main>
+</body>
+</html>

@@ -54,11 +54,52 @@ module tb_prog_profesor();
   wire        EsSaltoE   = 1'b0;
 `endif
 
+
+  wire [31:0] x1 = dut.rvpipe.dp.rf.rf[1];
+  wire [31:0] x2 = dut.rvpipe.dp.rf.rf[2];
+  wire [31:0] x3 = dut.rvpipe.dp.rf.rf[3];
+  wire [31:0] x4 = dut.rvpipe.dp.rf.rf[4];
+  wire [31:0] x5 = dut.rvpipe.dp.rf.rf[5];
+  wire [31:0] x6 = dut.rvpipe.dp.rf.rf[6];
+  wire [31:0] x7 = dut.rvpipe.dp.rf.rf[7];
+  wire [31:0] x8 = dut.rvpipe.dp.rf.rf[8];
+  wire [31:0] x9 = dut.rvpipe.dp.rf.rf[9];
+  wire [31:0] x10 = dut.rvpipe.dp.rf.rf[10];
+  wire [31:0] x11 = dut.rvpipe.dp.rf.rf[11];
+  wire [31:0] x12 = dut.rvpipe.dp.rf.rf[12];
+  wire [31:0] x13 = dut.rvpipe.dp.rf.rf[13];
+  wire [31:0] x14 = dut.rvpipe.dp.rf.rf[14];
+  wire [31:0] x15 = dut.rvpipe.dp.rf.rf[15];
+  wire [31:0] x16 = dut.rvpipe.dp.rf.rf[16];
+  wire [31:0] x17 = dut.rvpipe.dp.rf.rf[17];
+  wire [31:0] x18 = dut.rvpipe.dp.rf.rf[18];
+  wire [31:0] x19 = dut.rvpipe.dp.rf.rf[19];
+  wire [31:0] x20 = dut.rvpipe.dp.rf.rf[20];
+  wire [31:0] x21 = dut.rvpipe.dp.rf.rf[21];
+  wire [31:0] x22 = dut.rvpipe.dp.rf.rf[22];
+  wire [31:0] x23 = dut.rvpipe.dp.rf.rf[23];
+  wire [31:0] x24 = dut.rvpipe.dp.rf.rf[24];
   wire [31:0] x25 = dut.rvpipe.dp.rf.rf[25];
+  wire [31:0] x26 = dut.rvpipe.dp.rf.rf[26];
+  wire [31:0] x27 = dut.rvpipe.dp.rf.rf[27];
   wire [31:0] x28 = dut.rvpipe.dp.rf.rf[28];
   wire [31:0] x29 = dut.rvpipe.dp.rf.rf[29];
   wire [31:0] x30 = dut.rvpipe.dp.rf.rf[30];
   wire [31:0] x31 = dut.rvpipe.dp.rf.rf[31];
+  wire [31:0] M0 = dut.dmem.RAM[BASE + 0];
+  wire [31:0] M4 = dut.dmem.RAM[BASE + 1];
+  wire [31:0] M8 = dut.dmem.RAM[BASE + 2];
+  wire [31:0] M12 = dut.dmem.RAM[BASE + 3];
+  wire [31:0] M16 = dut.dmem.RAM[BASE + 4];
+  wire [31:0] M20 = dut.dmem.RAM[BASE + 5];
+  wire [31:0] M24 = dut.dmem.RAM[BASE + 6];
+  wire [31:0] M28 = dut.dmem.RAM[BASE + 7];
+  wire [31:0] M32 = dut.dmem.RAM[BASE + 8];
+  wire [31:0] M36 = dut.dmem.RAM[BASE + 9];
+  wire [31:0] M40 = dut.dmem.RAM[BASE + 10];
+  wire [31:0] M44 = dut.dmem.RAM[BASE + 11];
+  wire [31:0] M48 = dut.dmem.RAM[BASE + 12];
+  wire [31:0] M52 = dut.dmem.RAM[BASE + 13];
 
   top #(.MEMFILE("prog_profesor.mem")) dut(
     .clk(clk),
