@@ -12,9 +12,11 @@ C_dual_optimizado/   Dual-Issue + BTB con contador de 2 bits (EF)
   sim/               Testbenches
   mem/               Programas .s y .mem
 programas/profesor/  Programa de evaluación del profesor (.s, .mem, PDF)
+programas/propio/    Programa propio del grupo (.s, .mem)
 tools/
   asm.py             Ensamblador RV32I mínimo:  python3 tools/asm.py prog.s prog.mem
   modelo_isa.py      Modelo ISA de referencia:   python3 tools/modelo_isa.py prog.s
+  gen_tb.py          Genera un testbench con checkpoints por etapa a partir del modelo ISA
   fuzz/              Prueba diferencial aleatoria (A, B y C contra el modelo ISA)
 vivado/
   crear_proyecto.tcl Crea un proyecto Vivado para una de las versiones
@@ -105,8 +107,45 @@ Los flushes incluyen el `jal x0, fin`, que llega a EX antes de que se retire la 
 | 284 | `beq x25,x2,D1` | 6 | 5 | 2 | Arranque en frío y salida |
 | 300–356 | Saltos de D3–D6 y `fin` | 1 c/u | — | 4 | Se ejecutan una sola vez: fallo obligatorio |
 
+## Programa propio (`prog_propio.s`, `tb_prog_propio.v`)
+
+El arreglo `A[16]` vive en 1024, `B` en 1088, `C` en 1152 y los resultados en 1216. Tiene 4 etapas con un checkpoint al final de cada una (`chk[0..3]`, `ok[0..3]`):
+
+1. **Inicialización con software pipelining:** se intercalan `addi` de la siguiente constante con el `sw` de la anterior, así cada par (ALU + store) sale junto.
+2. **Recorrido con salto dependiente de datos:** `B[i] = A[i] + i`, suma total y conteo de `A[i] > 7`. El patrón del salto es irregular (N N T T N T N T N T N T T N T N): es el caso difícil para el predictor.
+3. **Suma vectorial desenrollada ×2:** `C = A + B` con dos cadenas independientes por iteración (más ILP, salto del lazo predecible).
+4. **Lazos anidados 4×4:** suma por filas de `C` y máximo. El salto interno falla una vez por cada salida.
+
+Estado final: suma = 120, conteo = 8, filas de C = 68, 82, 104, 106 y máximo = 106.
+
+| Indicador | Pipeline | Dual-Issue | Optimizado |
+|---|---|---|---|
+| Ciclos totales | 583 | 437 | 373 |
+| Instrucciones retiradas | 490 | 490 | 490 |
+| CPI | 1.190 | 0.892 | 0.761 |
+| IPC | 0.840 | 1.121 | 1.314 |
+| Speedup vs. pipeline | 1.00 | 1.33 | 1.56 |
+| Speedup vs. dual-issue | — | 1.00 | 1.17 |
+| Ciclos con stall load-use | 0 | 48 | 41 |
+| Flushes por salto | 46 | 46 | 25 |
+| Ciclos con dos retiros | 0 | 195 | 209 |
+
+Cota con predictor perfecto y las mismas reglas de emisión: unos 324 ciclos (CPI ≈ 0.66).
+
+| PC | Salto | Ejecutado | Tomado | Fallos |
+|---|---|---|---|---|
+| 208 | `beq x22,x0,L2s` (A[i] > 7) | 16 | 8 | 13 |
+| 220 | `beq x23,x15,L2` | 16 | 15 | 2 |
+| 304 | `beq x23,x15,L3` | 8 | 7 | 2 |
+| 356 | `beq x23,x15,L4i` (interno) | 16 | 12 | 5 |
+| 368 | `beq x29,x0,L4n` | 4 | 0 | 0 |
+| 388 | `beq x23,x15,L4o` (externo) | 4 | 3 | 2 |
+| 400 | `jal x0,fin` | 1 | 1 | 1 |
+
+En el single-issue no hay stalls load-use porque el consumidor del `lw` está a 2 instrucciones. En el dual-issue esas 2 instrucciones caen en ciclos consecutivos, así que el `lw` y su consumidor quedan en paquetes contiguos y aparece la burbuja: la distancia que basta en un pipeline escalar no basta con emisión doble.
+
 ## Verificación
 
-- Las tres versiones pasan los checkpoints A–D del programa del profesor y retiran 312 instrucciones.
+- Las tres versiones pasan los checkpoints A–D del programa del profesor (312 instrucciones) y los 4 del programa propio (490 instrucciones).
 - Los testbenches de E2 pasan en B y C, y los `tb_single_*` en A.
 - `tools/fuzz/correr.sh 400` genera 400 programas aleatorios (lazos anidados, saltos hacia adelante, `jal`, load-use, conflictos de memoria) y compara el estado final de A, B y C con el modelo ISA: 0 fallos. Requiere Icarus Verilog y Python 3.
