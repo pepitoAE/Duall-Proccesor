@@ -18,7 +18,7 @@ module tb_prog_profesor();
   reg ok_A, ok_B, ok_C, ok_D;
   reg fin_computo;
 
-  integer ciclos, retiradas, stalls, flushes, dobles, errores;
+  integer ciclos, retiradas, stalls, flushes, dobles, errores, saltos;
   integer ciclos_fin, retiradas_fin;
   integer i;
 
@@ -46,7 +46,13 @@ module tb_prog_profesor();
   wire [31:0] ResW2    = 32'd0;
 `endif
   wire        lwStall  = dut.rvpipe.hu.lwStall;
-  wire        PCSrcE   = dut.rvpipe.dp.PCSrcE;
+`ifdef OPT
+  wire        FlushSalto = dut.rvpipe.dp.MispE;
+  wire        EsSaltoE   = dut.rvpipe.dp.EsSaltoE;
+`else
+  wire        FlushSalto = dut.rvpipe.dp.PCSrcE;
+  wire        EsSaltoE   = 1'b0;
+`endif
 
   wire [31:0] x25 = dut.rvpipe.dp.rf.rf[25];
   wire [31:0] x28 = dut.rvpipe.dp.rf.rf[28];
@@ -141,7 +147,7 @@ module tb_prog_profesor();
     $dumpvars(0, tb_prog_profesor);
     cargar_esperados;
     for (i = 0; i < 32; i = i + 1) sh[i] = 0;
-    ciclos = 0; retiradas = 0; stalls = 0; flushes = 0; dobles = 0; errores = 0;
+    ciclos = 0; retiradas = 0; stalls = 0; flushes = 0; saltos = 0; dobles = 0; errores = 0;
     chk_A = 0; chk_B = 0; chk_C = 0; chk_D = 0;
     ok_A = 0; ok_B = 0; ok_C = 0; ok_D = 0;
     fin_computo = 0;
@@ -157,7 +163,8 @@ module tb_prog_profesor();
   always @(posedge clk) if (!reset && !fin_computo) begin
     ciclos = ciclos + 1;
     if (lwStall) stalls = stalls + 1;
-    if (PCSrcE)  flushes = flushes + 1;
+    if (FlushSalto) flushes = flushes + 1;
+    if (EsSaltoE)   saltos = saltos + 1;
   end
 
   always @(negedge clk) if (!reset) begin
@@ -173,7 +180,13 @@ module tb_prog_profesor();
       $display("CPI                     : %0.3f", ciclos_fin * 1.0 / retiradas_fin);
       $display("IPC                     : %0.3f", retiradas_fin * 1.0 / ciclos_fin);
       $display("Ciclos con load-use     : %0d", stalls);
+`ifdef OPT
+      $display("Saltos resueltos en E   : %0d", saltos);
+      $display("Predicciones fallidas   : %0d", flushes);
+      $display("Precision del predictor : %0.2f %%", 100.0 * (saltos - flushes) / saltos);
+`else
       $display("Saltos tomados en E     : %0d", flushes);
+`endif
       $display("Ciclos con 2 retiros    : %0d", dobles);
       $display("Errores                 : %0d", errores);
       $display("METRICS %0d %0d %0d %0d %0d %0d", ciclos_fin, retiradas_fin, stalls, flushes, dobles, errores);

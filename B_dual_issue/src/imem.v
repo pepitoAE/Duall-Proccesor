@@ -8,7 +8,7 @@ module imem #(parameter MEMFILE = "riscvtest.mem")
 
   initial begin
       for (i = 0; i < 256; i = i + 1) RAM[i] = 32'b0;
-      $readmemh(MEMFILE, RAM, 0, 255); 
+      $readmemh(MEMFILE, RAM); 
   end
 
   assign rd  = RAM[a[9:2]];
